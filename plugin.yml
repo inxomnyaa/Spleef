@@ -1,0 +1,10 @@
+---
+name: Spleef
+main: xenialdan\Spleef\Loader
+version: 0.2.3
+api:
+- 3.0.0-ALPHA10
+authors:
+- XenialDan
+prefix: '[Spleef]'
+...
