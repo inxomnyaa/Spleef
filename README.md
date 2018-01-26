@@ -3,7 +3,7 @@ Spleef using https://github.com/thebigsmileXD/gameapi
 ## Clarification
 This plugin is just a proof of concept of making things easier for developers using OOP
 
-Though just being a concept, you could actually play this game. Go test it on [wolvesfortress.de:19133 (click to add to Minecraft)](https://server.wolvesfortress.de/quickadd.php?game) if you like to.
+Though just being a concept, you could actually play this game. Go test it on [wolvesfortress.de:19133 (click to add to Minecraft)](https://server.wolvesfortress.de/quickadd.php?game=1) if you like to.
 
 Setup is really easy. The world is automatically generated, called 'spleef'. To replace the map with another map, go to /plugins/Spleef/worlds and replace your 'spleef' data with your worlds data (you should keep the level.dat though)
 
