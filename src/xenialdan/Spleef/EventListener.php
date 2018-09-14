@@ -9,6 +9,7 @@ use pocketmine\event\Listener;
 use pocketmine\item\IronShovel;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
+use pocketmine\item\Shovel;
 use pocketmine\Player;
 use xenialdan\gameapi\API;
 use xenialdan\gameapi\Arena;
@@ -46,7 +47,7 @@ class EventListener implements Listener{
 		if (API::isArena(Loader::getInstance(), ($entity = $event->getPlayer())->getLevel()) && API::isPlaying(Loader::getInstance(), $entity)){
 			if (!$event->getBlock() instanceof Snow) $event->setCancelled();
 			else{
-				/** @var IronShovel $item */
+				/** @var Shovel $item */
 				$item =
 					$event->getPlayer()->getInventory()->getItemInHand();
 				$item->setDamage(0);
