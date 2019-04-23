@@ -1,10 +1,30 @@
 ---
 name: Spleef
 main: xenialdan\Spleef\Loader
-version: 0.2.3
-api:
-- 3.0.0-ALPHA10
-authors:
-- XenialDan
+version: 1.0.0
+api: [3.0.0, 4.0.0]
+softdepend:
+- DEVirion
+- gamereward
+author: XenialDan
 prefix: '[Spleef]'
+permissions:
+  spleef.command:
+    description: Base perm for spleef commands
+    default: true
+    children:
+      spleef.command.leave:
+        default: true
+      spleef.command.forcestart:
+        default: op
+      spleef.command.stop:
+        default: op
+      spleef.command.endsetup:
+        default: op
+      spleef.command.setup:
+        default: op
+      spleef.command.info:
+        default: true
+      spleef.command.status:
+        default: op
 ...
