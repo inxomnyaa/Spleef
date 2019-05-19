@@ -56,7 +56,7 @@ class SpleefCommand extends PluginCommand
                             return true;
                         }
                         $arena = API::getArenaOfPlayer($sender);
-                        if (is_null($arena)) {
+                        if (is_null($arena) || !API::isArenaOf($this->getPlugin(), $arena->getLevel())) {
                             /** @var Game $plugin */
                             $plugin = $this->getPlugin();
                             $sender->sendMessage(TextFormat::RED . "It appears that you are not playing " . $plugin->getPrefix());
@@ -92,7 +92,7 @@ class SpleefCommand extends PluginCommand
                             return true;
                         }
                         $arena = API::getArenaOfPlayer($sender);
-                        if (is_null($arena)) {
+                        if (is_null($arena) || !API::isArenaOf($this->getPlugin(), $arena->getLevel())) {
                             /** @var Game $plugin */
                             $plugin = $this->getPlugin();
                             $sender->sendMessage(TextFormat::RED . "It appears that you are not playing " . $plugin->getPrefix());

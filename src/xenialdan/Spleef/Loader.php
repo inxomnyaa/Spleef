@@ -20,7 +20,6 @@ use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use xenialdan\BossBarAPI\API as BossBarAPI;
 use xenialdan\customui\elements\Button;
 use xenialdan\customui\elements\Input;
 use xenialdan\customui\elements\Label;
@@ -185,8 +184,7 @@ class Loader extends PluginBase implements Game
             $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
         }
 
-        BossBarAPI::setTitle('Good luck! ' . count($this->getPlayers()) . ' players alive', $arena->bossbarids['state'], $this->getPlayers());
-        BossBarAPI::setPercentage(100, $arena->bossbarids['state'], $this->getPlayers());
+        $arena->bossbar->setTitle('Good luck! ' . count($this->getPlayers()) . ' players alive')->setPercentage(1);
     }
 
     /**
