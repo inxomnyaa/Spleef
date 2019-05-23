@@ -184,7 +184,7 @@ class Loader extends PluginBase implements Game
             $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
         }
 
-        $arena->bossbar->setTitle('Good luck! ' . count($this->getPlayers()) . ' players alive')->setPercentage(1);
+        $arena->bossbar->setSubTitle()->setTitle('Good luck! ' . count($this->getPlayers()) . ' players alive')->setPercentage(1);
     }
 
     /**
@@ -209,13 +209,11 @@ class Loader extends PluginBase implements Game
         $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, false));
         $pk->gameRules = $gamerulelist->getRules();
         $player->sendDataPacket($pk);
-        //Clear old entities
-        /** @var Entity $itemEntity */
-        foreach (array_filter($player->getLevel()->getEntities(), function (Entity $entity) {
-            return $entity instanceof ItemEntity;
-        }) as $itemEntity) {
-            $itemEntity->close();
-        }
+    }
+
+    public function removeEntityOnReset(Entity $entity): bool
+    {
+        return $entity instanceof ItemEntity;
     }
 
     /**
