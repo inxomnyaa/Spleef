@@ -3,7 +3,6 @@
 namespace xenialdan\Spleef;
 
 use pocketmine\block\BlockIds;
-use pocketmine\entity\Attribute;
 use pocketmine\entity\Entity;
 use pocketmine\entity\object\ItemEntity;
 use pocketmine\item\enchantment\Enchantment;
@@ -11,13 +10,10 @@ use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
 use pocketmine\item\Shovel;
-use pocketmine\level\generator\GeneratorManager;
 use pocketmine\level\Level;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\nbt\tag\StringTag;
-use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\Player;
-use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use xenialdan\customui\elements\Button;
@@ -30,17 +26,13 @@ use xenialdan\customui\windows\SimpleForm;
 use xenialdan\gameapi\API;
 use xenialdan\gameapi\Arena;
 use xenialdan\gameapi\Game;
-use xenialdan\gameapi\gamerule\BoolGameRule;
-use xenialdan\gameapi\gamerule\GameRuleList;
 use xenialdan\gameapi\Team;
 use xenialdan\Spleef\commands\SpleefCommand;
 
-class Loader extends PluginBase implements Game
+class Loader extends Game
 {
     /** @var Loader */
     private static $instance = null;
-    /** @var Arena[] */
-    private static $arenas = [];
 
     /**
      * Returns an instance of the plugin
@@ -64,95 +56,25 @@ class Loader extends PluginBase implements Game
         /** @noinspection PhpUnhandledExceptionInspection */
         API::registerGame($this);
         foreach (glob($this->getDataFolder() . "*.json") as $v) {
-            $settings = new SpleefSettings($v);
-            $levelname = basename($v, ".json");
-            $arena = new Arena($levelname, $this, $settings);
-            $team = new Team(TextFormat::RESET, "Players");
-            $team->setMinPlayers(2);
-            $team->setMaxPlayers((int)$settings->maxPlayers);
-            $arena->addTeam($team);
-            var_dump($team);
-            $this->addArena($arena);
-        }
-    }
-
-    public function onDisable()
-    {
-        try {
-            API::stop($this);
-        } catch (\ReflectionException $e) {
+            $this->addArena($this->getNewArena($v));
         }
     }
 
     /**
-     * Adds an arena
-     * @param Arena $arena
+     * Create and return a new arena, used for addArena in onLoad, setupArena and resetArena (in @see ArenaAsyncCopyTask)
+     * @param string $settingsPath The path to the .json file used for the settings. Basename should be levelname
+     * @return Arena
      */
-    public function addArena(Arena $arena): void
+    public function getNewArena(string $settingsPath): Arena
     {
-        self::$arenas[$arena->getLevelName()] = $arena;
-        var_dump(array_keys(self::$arenas));
-    }
-
-    /**
-     * Removes an arena
-     * @param Arena $arena
-     */
-    public function removeArena(Arena $arena): void
-    {
-        unset(self::$arenas[$arena->getLevelName()]);
-    }
-
-    /**
-     * Stops, removes and deletes the arena config
-     * @param Arena $arena
-     * @return bool
-     */
-    public function deleteArena(Arena $arena): bool
-    {
-        $arena->stopArena();
-        $this->removeArena($arena);
-        return unlink($this->getDataFolder() . $arena->getLevelName() . ".json");
-    }
-
-    /**
-     * returns all arenas
-     * @return Arena[]
-     */
-    public function getArenas(): array
-    {
-        return self::$arenas;
-    }
-
-    /**
-     * @return Player[]
-     */
-    public function getPlayers()
-    {
-        $players = [];
-        foreach ($this->getArenas() as $arena) {
-            $players = array_merge($players, $arena->getPlayers());
-        }
-        return $players;
-    }
-
-    /**
-     * The prefix of the game
-     * Used for messages and signs
-     * @return string;
-     */
-    public function getPrefix(): string
-    {
-        return $this->getDescription()->getPrefix();
-    }
-
-    /**
-     * The names of the authors
-     * @return string;
-     */
-    public function getAuthors(): string
-    {
-        return implode(", ", $this->getDescription()->getAuthors());
+        $settings = new SpleefSettings($settingsPath);
+        $levelname = basename($settingsPath, ".json");
+        $arena = new Arena($levelname, $this, $settings);
+        $team = new Team(TextFormat::RESET, "Players");
+        $team->setMinPlayers(2);
+        $team->setMaxPlayers((int)$settings->maxPlayers);
+        $arena->addTeam($team);
+        return $arena;
     }
 
     /**
@@ -160,13 +82,6 @@ class Loader extends PluginBase implements Game
      */
     public function startArena(Arena $arena): void
     {
-        $arena->getLevel()->setTime(Level::TIME_DAY);
-        $arena->getLevel()->stopTime();
-        $pk = new GameRulesChangedPacket();
-        $gamerulelist = new GameRuleList();
-        $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, false));
-        $pk->gameRules = $gamerulelist->getRules();
-        $arena->getLevel()->broadcastGlobalPacket($pk);
         /** @var Shovel $shovel */
         $shovel = ItemFactory::get(ItemIds::IRON_SHOVEL);
         $enchantment = Enchantment::getEnchantment(Enchantment::UNBREAKING);
@@ -176,42 +91,35 @@ class Loader extends PluginBase implements Game
         $shovel->setNamedTagEntry((new ListTag("CanDestroy", [new StringTag((string)BlockIds::SNOW_BLOCK)])));
 
         foreach ($arena->getPlayers() as $player) {
-            $player->setGamemode(Player::SURVIVAL);
             $player->getInventory()->addItem($shovel);
-
-            $player->setHealth($player->getMaxHealth());
-            $player->setFood($player->getMaxFood());
-            $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
         }
 
-        $arena->bossbar->setSubTitle()->setTitle('Good luck! ' . count($this->getPlayers()) . ' players alive')->setPercentage(1);
+        $arena->bossbar->setSubTitle()->setTitle('Good luck! ' . count($arena->getPlayers()) . ' players alive')->setPercentage(1);
     }
 
     /**
-     * TODO use this
+     * Called AFTER API::stopArena, do NOT use $arena->stopArena() in this function - will result in an recursive call
      * @param Arena $arena
      */
     public function stopArena(Arena $arena): void
     {
-        // TODO: Implement stopArena() method.
     }
 
     /**
-     * Called right when a player joins a game in an arena. Used to set up players
+     * Called right when a player joins a team in an arena of this game. Used to set up players
      * @param Player $player
      */
-    public function onPlayerJoinGame(Player $player): void
+    public function onPlayerJoinTeam(Player $player): void
     {
-        $player->getLevel()->setTime(Level::TIME_DAY);
-        $player->getLevel()->stopTime();
-        $pk = new GameRulesChangedPacket();
-        $gamerulelist = new GameRuleList();
-        $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, false));
-        $pk->gameRules = $gamerulelist->getRules();
-        $player->sendDataPacket($pk);
     }
 
-    public function removeEntityOnReset(Entity $entity): bool
+    /**
+     * Callback function for array_filter
+     * If return value is true, this entity will be deleted.
+     * @param Entity $entity
+     * @return bool
+     */
+    public function removeEntityOnArenaReset(Entity $entity): bool
     {
         return $entity instanceof ItemEntity;
     }
@@ -250,7 +158,7 @@ class Loader extends PluginBase implements Game
                     $form->setCallable(function (Player $player, $data) use ($new) {
                         $setup["name"] = $new ? $data[1] : $data;
                         if ($new) {
-                            Server::getInstance()->generateLevel($setup["name"], null, GeneratorManager::getGenerator('game_void'));
+                            API::$generator->generateLevel($setup["name"]);
                         }
                         Server::getInstance()->loadLevel($setup["name"]);
                         $form = new CustomForm("Spleef teams setup");
@@ -260,13 +168,8 @@ class Loader extends PluginBase implements Game
                             //New arena
                             $settings = new SpleefSettings($this->getDataFolder() . $setup["name"] . ".json");
                             $settings->maxPlayers = $setup["maxplayers"];
-                            $arena = new Arena($setup["name"], $this, $settings);
-                            $team = new Team(TextFormat::RESET, "Players");
-                            $team->setMinPlayers(2);
-                            $team->setMaxPlayers((int)$settings->maxPlayers);
-                            $arena->addTeam($team);
-                            $this->addArena($arena);
-                            $arena->getSettings()->save();
+                            $settings->save();
+                            $this->addArena($this->getNewArena($this->getDataFolder() . $setup["name"] . ".json"));
                             //Messages
                             $player->sendMessage(TextFormat::GOLD . TextFormat::BOLD . "Done! Spleef arena was set up with following settings:");
                             $player->sendMessage(TextFormat::AQUA . "World name: " . TextFormat::DARK_AQUA . $setup["name"]);
@@ -335,21 +238,5 @@ class Loader extends PluginBase implements Game
             }
         });
         $player->sendForm($form);
-    }
-
-    /**
-     * Stops the setup and teleports the player back to the default level
-     * @param Player $player
-     */
-    public function endSetupArena(Player $player): void
-    {
-        $arena = API::getArenaByLevel($this, $player->getLevel());
-        $arena->getSettings()->save();
-        $arena->setState(Arena::IDLE);
-        $player->getInventory()->clearAll();
-        $player->setAllowFlight(false);
-        $player->setFlying(false);
-        $player->setGamemode($player->getServer()->getDefaultGamemode());
-        $player->teleport($player->getServer()->getDefaultLevel()->getSpawnLocation());
     }
 }
