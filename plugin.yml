@@ -1,11 +1,11 @@
 ---
 name: Spleef
 main: xenialdan\Spleef\Loader
-version: 1.0.2
-api: [3.0.0, 4.0.0]
+version: 1.0.3
+api: ["3.14"]
 softdepend:
-- DEVirion
-- gamereward
+  - DEVirion
+  - gamereward
 author: XenialDan
 prefix: '[Spleef]'
 permissions:
